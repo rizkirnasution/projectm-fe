@@ -11,7 +11,14 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
     const [collaborators, setCollaborators] = useState([]);
-    const [roles, setRoles] = useState({}); 
+    const [roles, setRoles] = useState({});
+
+    const formatDueDate = (start, end) => {
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        const startFormatted = new Date(start).toLocaleDateString('id-ID', options);
+        const endFormatted = new Date(end).toLocaleDateString('id-ID', options);
+        return `${startFormatted} - ${endFormatted}`;
+    };
 
     useEffect(() => {
         if (initialData) {
@@ -20,9 +27,12 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
             setStatus(initialData.status || 'todo');
             setSelectedContributors(initialData.contributors || []);
             const [start, end] = (initialData.dueDate || '').split(' - ');
-            if (start && end) {
-                setStartDate(new Date(start));
-                setEndDate(new Date(end));
+
+            if (initialData.startDate) {
+                setStartDate(new Date(initialData.startDate))
+            }
+            if (initialData.endDate) {
+                setEndDate(new Date(initialData.endDate))
             }
         }
     }, [initialData]);
@@ -46,7 +56,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
         };
 
 
-         const fetchRoles = async () => {
+        const fetchRoles = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/role', {
                     headers: {
@@ -55,7 +65,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
                 });
                 const data = await response.json();
                 if (data.status === 200) {
-                
+
                     const rolesMap = {};
                     data.data.forEach(role => {
                         rolesMap[role.id] = role.name;
@@ -78,7 +88,9 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
             description,
             status,
             contributors: selectedContributors,
-            dueDate: `${startDate.toISOString().split('T')[0]} - ${endDate.toISOString().split('T')[0]}`,
+            dueDate: formatDueDate(startDate, endDate),
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
         };
 
         try {
@@ -92,13 +104,13 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
             });
 
             if (!response.ok) {
-                throw new Error('Failed update task');
+                throw new Error('Failed');
             }
 
             onSubmit();
             onClose();
         } catch (error) {
-            console.error('Error updating task: ', error);
+            console.error('Error: ', error);
         }
     };
 
@@ -157,7 +169,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
                         >
                             {collaborators.map((c) => (
                                 <option key={c.username} value={c.username}>
-                                    {c.username} - {roles[c.roleId].toUpperCase() }
+                                    {c.username} - {roles[c.roleId] ? roles[c.roleId].toUpperCase() : '-'}
                                 </option>
                             ))}
                         </select>
@@ -167,11 +179,11 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
                             <label className="block text-sm text-gray-700">Start Date</label>
                             <div className="relative">
                                 <DatePicker
-                                selected={startDate}
-                                onChange={(date) => setStartDate(date)}
-                                dateFormat="dd-MM-yyyy"
-                                className={`w-full p-2 border rounded ${isPM ? 'bg-white text-black' : 'bg-gray-200 text-gray-500'}`}
-                                disabled={!isPM}
+                                    selected={startDate}
+                                    onChange={(date) => setStartDate(date)}
+                                    dateFormat="dd-MM-yyyy"
+                                    className={`w-full p-2 border rounded ${isPM ? 'bg-white text-black' : 'bg-gray-200 text-gray-500'}`}
+                                    disabled={!isPM}
                                 />
                                 <CalendarIcon className="absolute right-2 top-1/2 h-5 w-5 text-gray-500 transform -translate-y-1/2 pointer-events-none" />
                             </div>
@@ -180,18 +192,18 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
                             <label className="block text-sm text-gray-700">End Date</label>
                             <div className="relative">
                                 <DatePicker
-                                selected={endDate}
-                                onChange={(date) => setEndDate(date)}
-                                dateFormat="dd-MM-yyyy"
-                                className={`w-full p-2 border rounded ${isPM ? 'bg-white text-black' : 'bg-gray-200 text-gray-500'}`}
-                                disabled={!isPM}
+                                    selected={endDate}
+                                    onChange={(date) => setEndDate(date)}
+                                    dateFormat="dd-MM-yyyy"
+                                    className={`w-full p-2 border rounded ${isPM ? 'bg-white text-black' : 'bg-gray-200 text-gray-500'}`}
+                                    disabled={!isPM}
                                 />
                                 <CalendarIcon className="absolute right-2 top-1/2 h-5 w-5 text-gray-500 transform -translate-y-1/2 pointer-events-none" />
                             </div>
                         </div>
                     </div>
                     <div className="flex justify-center">
-                    <button
+                        <button
                             type="submit"
                             className="w-full md:w-40 rounded px-2 py-2 bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition duration-200"
                         >

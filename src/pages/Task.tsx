@@ -105,6 +105,8 @@ const Task: React.FC = () => {
         description: string;
         status: string;
         contributors: string[];
+        startDate: string,
+        endDate: string,
         dueDate: string;
     }) => {
         try {
