@@ -1,5 +1,6 @@
 import React from 'react';
 
+//props yang akan diterima oleh komponen Card
 interface CardProps {
     dueDate: string;
     title: string;
@@ -8,9 +9,10 @@ interface CardProps {
     status: 'todo' | 'on progress' | 'done';
 }
 
-
+// Func Card yang menerima props sesuai dengan CardProps
 const Card: React.FC<CardProps> = ({ dueDate, title, description, contributors, status }) => {
 
+    // Fungsi untuk menentukan warna teks berdasarkan status tugas
     const getStatusColor = () => {
         switch (status) {
             case 'todo':

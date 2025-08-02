@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
+//compo create user modal dengan props
 const CreateUserModal = ({ isOpen, onClose, onSubmit }) => {
+    //state form yg akan dicreate
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('');
     const [roles, setRoles] = useState([]);
 
+    //fetch role untuk mapping role
     useEffect(() => {
         const fetchRoles = async () => {
             try {
@@ -18,7 +21,7 @@ const CreateUserModal = ({ isOpen, onClose, onSubmit }) => {
                 });
                 const data = await response.json();
                 if (data.status === 200) {
-                    setRoles(data.data);
+                    setRoles(data.data);//simpan role jika berhasil
                 }
             } catch (error) {
                 console.error('Error :', error);
@@ -30,8 +33,9 @@ const CreateUserModal = ({ isOpen, onClose, onSubmit }) => {
         }
     }, [isOpen]);
 
+    //handle submit untuk create
     const handleSubmit = (e) => {
-        e.preventDefault();
+        e.preventDefault();//menahan agar tidak reload
 
         const payload = {
             email,
@@ -40,7 +44,7 @@ const CreateUserModal = ({ isOpen, onClose, onSubmit }) => {
             roleId: Number(role),
         };
 
-        onSubmit(payload);
+        onSubmit(payload);//panggil onSubmit dari parent untuk mengirim payload
     };
 
     if (!isOpen) return null;

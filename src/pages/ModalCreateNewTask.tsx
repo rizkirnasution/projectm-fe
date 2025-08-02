@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { CalendarIcon } from '@heroicons/react/24/outline';
 
+//component menerima props
 const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -12,16 +13,22 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
     const [endDate, setEndDate] = useState(null);
     const [collaborators, setCollaborators] = useState([]);
     const [roles, setRoles] = useState({});
+    const [fileUpload, setFileUpload] = useState(null)
+
+    //errof validation Form
     const [formErrors, setFormErrors] = useState({
         title: "",
         description: "",
         status: "",
         contributors: "",
         startDate: "",
-        endDate: ""
+        endDate: "",
+        uploadFiles: ""
     });
 
+    //ambil data user dan role
     useEffect(() => {
+        //fetch semua user tp haya menampilkan username dan roleIdnya
         const fetchCollaborators = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/user/username', {
@@ -29,6 +36,8 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
                 });
+
+                //jika berhasil maka disimpan di state
                 const data = await response.json();
                 if (data.status === 200) {
                     setCollaborators(data.data);
@@ -38,6 +47,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
             }
         };
 
+        //fetch role
         const fetchRoles = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/role', {
@@ -45,13 +55,16 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
                 });
+              
                 const data = await response.json();
+                  //jika berhasil
                 if (data.status === 200) {
+                    //ambil semua data role agar bisa menampilkan nama role
                     const rolesMap = {};
                     data.data.forEach(role => {
                         rolesMap[role.id] = role.name;
                     });
-                    setRoles(rolesMap);
+                    setRoles(rolesMap); //simpan role di state {id:name}
                 }
             } catch (error) {
                 console.error('Error : ', error);
@@ -62,11 +75,13 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
         fetchRoles();
     }, []);
 
+    //validasi dan submit form
     const handleSubmit = (e) => {
-        e.preventDefault();
+        e.preventDefault();//mencegah reload halaman
         let hasError = false;
-        const newErrors = {...formErrors};
+        const newErrors = { ...formErrors };
 
+        //validasi semua satu per satu untuk kebutuhan formnya
         if (!title) {
             newErrors.title = "Please fill title";
             hasError = true;
@@ -91,56 +106,71 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
             newErrors.endDate = "Please select end date";
             hasError = true;
         }
+        if (!fileUpload) { // Check if file is uploaded
+            newErrors.uploadFiles = "Please select a file"; // Update the error message
+            hasError = true;
+        }
 
+        //kalau ada error, hentikan proses submit
         setFormErrors(newErrors);
 
         if (hasError) return;
 
-        const taskData = {
-            title,
-            description,
-            status,
-            contributors: selectedContributors,
-            startDate: startDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0]
-        };
+        //simpan ke FormData untuk dikirim ke backend
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("description", description);
+        formData.append("status", status);
+        formData.append("contributors", JSON.stringify(selectedContributors));
+        formData.append("startDate", startDate.toISOString().split("T")[0]);
+        formData.append("endDate", endDate.toISOString().split("T")[0]);
+        if (fileUpload) {
+            formData.append("file", fileUpload);
+        }
 
-        onSubmit(taskData);
-        onClose();
+        onSubmit(formData);//lempar data ke parent
+        onClose();//tutup modal setelah dikirim
     };
 
+    //handler semua untuk memperbaharui state dan menghapus error
     const handleTitleChange = (e) => {
         setTitle(e.target.value);
-        setFormErrors({...formErrors, title: ""});
+        setFormErrors({ ...formErrors, title: "" });
     };
 
     const handleDescriptionChange = (e) => {
         setDescription(e.target.value);
-        setFormErrors({...formErrors, description: ""});
+        setFormErrors({ ...formErrors, description: "" });
     };
 
     const handleStatusChange = (e) => {
         setStatus(e.target.value);
-        setFormErrors({...formErrors, status: ""});
+        setFormErrors({ ...formErrors, status: "" });
     };
 
     const handleContributorsChange = (e) => {
         const selected = Array.from(e.target.selectedOptions, (option) => option.value);
         setSelectedContributors(selected);
-        setFormErrors({...formErrors, contributors: ""});
+        setFormErrors({ ...formErrors, contributors: "" });
     };
 
     const handleStartDateChange = (date) => {
         setStartDate(date);
-        setFormErrors({...formErrors, startDate: ""});
+        setFormErrors({ ...formErrors, startDate: "" });
     };
 
     const handleEndDateChange = (date) => {
         setEndDate(date);
-        setFormErrors({...formErrors, endDate: ""});
+        setFormErrors({ ...formErrors, endDate: "" });
     };
 
-    if (!isOpen) return null;
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] || null;
+        setFileUpload(file);
+        setFormErrors({ ...formErrors, uploadFiles: "" });
+    };
+
+    if (!isOpen) return null;//jika modal false, komponent tidak merender apapun
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -225,7 +255,26 @@ const CreateTaskModal = ({ isOpen, onClose, onSubmit }) => {
                             </div>
                             {formErrors.endDate && <p className="text-red-500 text-xs mt-1">{formErrors.endDate}</p>}
                         </div>
+
                     </div>
+                    <div className="">
+                        <label className="block m-0 text-sm text-gray-700">Upload file </label>
+
+                        <label
+                            htmlFor="file_input"
+                            className="block mb-2 text-sm font-medium text-black dark:text-white"
+                        >
+                            Upload file
+                        </label>
+                        <input
+                            id="file_input"
+                            type="file"
+                            onChange={handleFileChange}
+                            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                        />
+                        {formErrors.uploadFiles && <p className="text-red-500 text-xs mt-1">{formErrors.uploadFiles}</p>}
+                    </div>
+
                     <div className="flex justify-center">
                         <button
                             type="submit"

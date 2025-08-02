@@ -12,14 +12,16 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 export default function DeleteConfirmDialog({ onConfirm, onCancel }) {
   const [open, setOpen] = useState(true)
 
+  //handle konfirmasi diapnggil ketika diklik 
   const handleConfirm = () => {
-    setOpen(false)
-    onConfirm()
+    setOpen(false) //tutup dialog
+    onConfirm() //panggil func confirm dari parent
   }
 
+  //handle dipangill ketika klik btn cancel
   const handleCancel = () => {
-    setOpen(false)
-    onCancel()
+    setOpen(false) //tutup dialog
+    onCancel() //panggil func cancel dari parent
   }
 
   return (

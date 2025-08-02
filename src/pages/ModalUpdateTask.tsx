@@ -3,6 +3,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { CalendarIcon } from '@heroicons/react/24/outline'
 
+//komponen modal dan props dari parent
 const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -13,6 +14,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
     const [collaborators, setCollaborators] = useState([]);
     const [roles, setRoles] = useState({});
 
+    //format tgl startDate, endDate menjadi dd/mm/yyyy - dd/mm/yyyy
     const formatDueDate = (start, end) => {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         const startFormatted = new Date(start).toLocaleDateString('id-ID', options);
@@ -21,6 +23,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
     };
 
     useEffect(() => {
+        //saat modal dibuka, initialData akan berubah dg data task yg lmaa
         if (initialData) {
             setTitle(initialData.title || '');
             setDescription(initialData.description || '');
@@ -38,6 +41,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
     }, [initialData]);
 
     useEffect(() => {
+        //untuk menampilkan collaborator, fetch user dari usernamenya
         const fetchCollaborators = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/user/username', {
@@ -55,7 +59,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
             }
         };
 
-
+        //fetch role
         const fetchRoles = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/role', {
@@ -70,7 +74,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
                     data.data.forEach(role => {
                         rolesMap[role.id] = role.name;
                     });
-                    setRoles(rolesMap);
+                    setRoles(rolesMap); //masukkan role {id: name}
                 }
             } catch (error) {
                 console.error('Error fetching roles:', error);
@@ -81,8 +85,11 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
         fetchRoles();
     }, []);
 
+    //handle submit form
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); //prevent reload
+
+        //data update yg akan dikirim
         const taskData = {
             title,
             description,
@@ -94,6 +101,7 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
         };
 
         try {
+            //kirim PUT req ke api untuk update berdasarkan id
             const response = await fetch(`http://localhost:5000/api/task/${taskId}`, {
                 method: 'PUT',
                 headers: {
@@ -107,8 +115,8 @@ const UpdateTaskModal = ({ isOpen, onClose, onSubmit, taskId, initialData, isPM 
                 throw new Error('Failed');
             }
 
-            onSubmit();
-            onClose();
+            onSubmit();//jika berhasil panggil 
+            onClose();//tutup modal
         } catch (error) {
             console.error('Error: ', error);
         }

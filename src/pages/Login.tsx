@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { setCredentials } from '../store/slices/authSlice';
 
+//validasi skema login
 const loginSchema = z.object({
     email: z.string().min(1, 'Email is required'),
     password: z.string().min(1, 'Password is required'),
@@ -16,12 +17,15 @@ export default function Login() {
     const dispatch = useDispatch();
     const [error, setError] = useState('');
 
+// Setup react-hook-form dengan Zod sebagai resolver validasi
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: zodResolver(loginSchema),
     });
 
+    //func ketika form disubmit
     const onSubmit = async (data: any) => {
         try {
+            //fetch login api, dengan mengirim email dan password dlm bentuk json
             const response = await fetch('http://localhost:5000/api/auth/v1/login', {
                 method: 'POST',
                 headers: {
@@ -35,26 +39,34 @@ export default function Login() {
 
             const result = await response.json();
 
+            //jika berhasil login
             if (response.ok) {
+
                 const { token, user } = result.data;
 
+                //akan diset ke credential email, token, role
                 dispatch(setCredentials({
                     email: user.email,
                     token: token,
                     role: user.role,
                 }));
 
+
+                //akan diset di dalam localStorage
                 localStorage.setItem('token', token);
                 localStorage.setItem('email', user.email);
                 localStorage.setItem('username', user.username);
                 localStorage.setItem('roleId', user.role?.id?.toString() ?? '');
                 localStorage.setItem('role', user.role?.name ?? '');
 
+                //ketika berhasil akan pindah ke halaman Dashboard
                 navigate('/dashboard');
             } else {
+                // Jika login gagal, tampilkan pesan error dari server
                 setError(result.message || 'Login failed');
             }
         } catch (error: any) {
+               // Jika login gagal, tampilkan pesan error lainnya
             console.error('Login error:', error);
             setError('An error occurred during login');
         }

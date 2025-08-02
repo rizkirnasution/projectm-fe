@@ -1,29 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
   DialogTitle,
 } from '@headlessui/react'
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
 
-//component dengan props dari parent
-export default function DeleteConfirmDialog({ onConfirm, onCancel }) {
+export default function ErrorDialog({ onClose, message }) {
   const [open, setOpen] = useState(true)
 
-  //handle konfirmasi diapnggil ketika diklik 
-  const handleConfirm = () => {
-    setOpen(false) //tutup dialog
-    onConfirm() //panggil func confirm dari parent
-  }
-
-  //handle dipangill ketika klik btn cancel
-  const handleCancel = () => {
-    setOpen(false) //tutup dialog
-    onCancel() //panggil func cancel dari parent
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOpen(false)
+      onClose()
+    }, 2500) // Auto-close after 2.5 seconds
+    return () => clearTimeout(timer)
+  }, [onClose])
 
   return (
     <Dialog open={open} onClose={() => {}} className="relative z-10">
@@ -33,28 +28,15 @@ export default function DeleteConfirmDialog({ onConfirm, onCancel }) {
         <DialogPanel className="relative w-full max-w-sm transform overflow-hidden rounded-2xl bg-white p-6 text-center shadow-xl transition-all">
           <div className="flex justify-center mb-4">
             <div className="animate-scale-in flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-              <ExclamationTriangleIcon className="h-10 w-10 text-red-600" />
+              <ExclamationCircleIcon className="h-10 w-10 text-red-600" />
             </div>
           </div>
-          
           <DialogTitle as="h3" className="text-lg font-semibold text-gray-900">
-          Are you sure you want to delete?
+            Failed!
           </DialogTitle>
-
-          <div className="mt-6 flex justify-center gap-4">
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
-            >
-              Delete
-            </button>
-          </div>
+          <p className="mt-2 text-sm text-gray-600">
+            {message || 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'}
+          </p>
         </DialogPanel>
       </div>
 

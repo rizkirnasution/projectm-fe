@@ -14,24 +14,25 @@ interface User {
 }
 
 const Users: React.FC = () => {
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [isCreateUserOpen, setCreateUserOpen] = useState(false);
-    const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
-    const [isEditUserOpen, setEditUserOpen] = useState(false);
+    const [users, setUsers] = useState<User[]>([]);//state untuk simpan semua data user
+    const [loading, setLoading] = useState(false); 
+    const [isCreateUserOpen, setCreateUserOpen] = useState(false);//modal create
+    const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);//modal sukses
+    const [isEditUserOpen, setEditUserOpen] = useState(false);//modal update
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);//modal delete
+    const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);//id user untuk dihapus
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");//ambil token dari localStorage
 
     useEffect(() => {
         fetchUsers();
     }, []);
 
+    //fetch semua data user
     const fetchUsers = async () => {
         try {
-            setLoading(true);
+            setLoading(true);//tampilkan loading
             const response = await fetch('http://localhost:5000/api/user/', {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -40,27 +41,28 @@ const Users: React.FC = () => {
             });
             const json = await response.json();
             const result = json.data;
-            setUsers(result);
+            setUsers(result); //simpan data user di state
         } catch (error) {
             console.error('Error :', error);
         } finally {
-            setLoading(false);
+            setLoading(false);//hide loading
         }
     };
 
     const handleOpenCreateUser = () => {
-        setCreateUserOpen(true);
+        setCreateUserOpen(true);//buka modal create
     };
 
     const handleCloseModalCreateUser = () => {
-        setCreateUserOpen(false);
+        setCreateUserOpen(false);//tutup modal create
     };
 
     const handleCloseSuccessDialog = () => {
-        setIsSuccessDialogOpen(false);
-        fetchUsers();
+        setIsSuccessDialogOpen(false);//tutup dialog success
+        fetchUsers();//refresh data user
     };
 
+    //handle create user
     const handleSubmitUser = async (userData: {
         email: string;
         username: string;
@@ -68,35 +70,40 @@ const Users: React.FC = () => {
         roleId: number;
     }) => {
         try {
+            //kirim req POST untuk create new user
             const response = await fetch('http://localhost:5000/api/user/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('token')}`,
                 },
-                body: JSON.stringify(userData),
+                body: JSON.stringify(userData),//ubah object userData menjadi string JSON
             });
 
+            //jika response error
             if (!response.ok) {
                 throw new Error('Failed ');
             }
 
-            setCreateUserOpen(false);
-            setIsSuccessDialogOpen(true);
-            fetchUsers();
+            setCreateUserOpen(false);//tutup modal create user
+            setIsSuccessDialogOpen(true);//muncul dialog sukses
+            fetchUsers();//refresh atau load user terbaru
 
         } catch (error) {
             console.error('Error:', error);
         }
     };
 
+    //handle open modal update
     const handleOpenEditUser = (user: User) => {
-        setSelectedUser(user);
-        setEditUserOpen(true);
+        setSelectedUser(user);//simpan user yg dipilih 
+        setEditUserOpen(true);//tampilkan modal update 
     };
 
+    //handle update user
     const handleEditUser = async (user) => {
         try {
+            //fetch PUTH ke user dengan id yg dipilih
             const response = await fetch(`http://localhost:5000/api/user/${user.id}`, {
                 method: 'PUT',
                 headers: {
@@ -106,24 +113,28 @@ const Users: React.FC = () => {
                 body: JSON.stringify(user),
             });
 
+            //jika error, lempar error
             if (!response.ok) throw new Error('Failed');
 
-            setEditUserOpen(false);
+            setEditUserOpen(false);//tutup modal update jika berhasil
 
-            fetchUsers();
+            fetchUsers();//refresh data user
 
         } catch (error) {
             console.error('Error:', error);
         }
     };
 
+    //handle open modal delete
     const handleOpenDeleteModal = (userId: string) => {
-        setUserIdToDelete(userId);
-        setIsDeleteModalOpen(true);
+        setUserIdToDelete(userId);//simpan id user yg ingin dihapus
+        setIsDeleteModalOpen(true);//buka modal delete
     };
 
+    //handle menghapus user
     const handleDeleteUser = async (userId: string) => {
         try {
+            //kirim API dan method DELETE dg mengirim userId yg akan dihapus
             const response = await fetch(`http://localhost:5000/api/user/${userId}`, {
                 method: 'DELETE',
                 headers: {
@@ -131,8 +142,8 @@ const Users: React.FC = () => {
                     'Content-Type': 'application/json'
                 }
             });
-            if (!response.ok) throw new Error('Failed ');
-            fetchUsers();
+            if (!response.ok) throw new Error('Failed ');//jika error
+            fetchUsers();//reload data user terbaru
         } catch (error) {
             console.error('Error :', error);
         }

@@ -3,11 +3,14 @@ import TopMenu from '../layouts/TopMenu/index';
 import Card from '../components/Card';
 
 export default function Dashboard() {
+    //state untuk menyimpan data task berdasarkan status
     const [taskTodo, setTaskToDo] = useState([]);
     const [taskOnProgress, setTaskOnProgress] = useState([]);
     const [taskDone, setTaskDone] = useState([]);
+    //ambil token autentikasi dari localstorage yg telah disimpan
     const token = localStorage.getItem("token");
 
+    //func untuk format startDate dan endDate
     const formatDueDate = (start, end) => {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         const startFormatted = new Date(start).toLocaleDateString('id-ID', options);
@@ -15,6 +18,7 @@ export default function Dashboard() {
         return `${startFormatted} - ${endFormatted}`;
     };
 
+    //hook useEffect dijalankan saat komponen pertama kali dimuat
     useEffect(() => {
         const fetchTasks = async () => {
             try {
@@ -28,13 +32,14 @@ export default function Dashboard() {
                     },
                 });
 
+                //apabila response gagal, lempar error
                 if (!fetchTodo.ok) {
                     throw new Error('Failed tasks todo');
                 }
 
+                //ambil data JSON dan simpan ke state
                 const dataToDo = await fetchTodo.json();
                 setTaskToDo(dataToDo.data);
-
 
                 // fetch on progress
                 const fetchOnProgress = await fetch("http://localhost:5000/api/task/search?keyword=on progress", {
@@ -45,10 +50,12 @@ export default function Dashboard() {
                     },
                 });
 
+                //apabila response gagal, lempar error
                 if (!fetchOnProgress.ok) {
                     throw new Error('Failed task on progress');
                 }
 
+                //ambil data JSON dan simpan ke state
                 const dataOnProgress = await fetchOnProgress.json();
                 setTaskOnProgress(dataOnProgress.data);
 
@@ -61,10 +68,12 @@ export default function Dashboard() {
                     },
                 });
 
+                //apabila response gagal, lempar error
                 if (!fetchDone.ok) {
                     throw new Error('Failed task done');
                 }
 
+                 //ambil data JSON dan simpan ke state
                 const dataDone = await fetchDone.json();
                 setTaskDone(dataDone.data);
             } catch (error) {
@@ -72,11 +81,13 @@ export default function Dashboard() {
             }
         };
 
+        //panggil func fetchTask
         fetchTasks();
-    }, [token]);
+    }, [token]); //useEffect akan update apabila tokennya berubah
 
     return (
         <div>
+            {/* menampilkan TopMenu */}
             <TopMenu />
             <div className="bg-white p-8">
                 <h2 className="text-black text-2xl font-bold mb-4 mt-4">Dashboard</h2>

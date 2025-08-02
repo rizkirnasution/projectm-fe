@@ -4,7 +4,9 @@ import CreateTaskModal from './ModalCreateNewTask';
 import UpdateTaskModal from './ModalUpdateTask';
 import DeleteConfirmDialog from './ModalDeleteTask';
 import SuccessDialog from '../components/ModalSuccess';
+import ErrorDialog from '../components/ModalError'; // sesuaikan dengan path kamu
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import iconPDF from '../../public/pdf.png'
 
 interface Task {
     id: string;
@@ -14,30 +16,35 @@ interface Task {
     description: string;
     status: 'todo' | 'on progress' | 'done';
     contributors: string[];
+    file?: File;
 }
 
 const Task: React.FC = () => {
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [searchKeyword, setSearchKeyword] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [taskIdToDelete, setTaskIdToDelete] = useState<string | null>(null);
+    const [tasks, setTasks] = useState<Task[]>([]); //state penyimpanan task
+    const [searchKeyword, setSearchKeyword] = useState(''); //keyword pencarian task
+    const [isModalOpen, setIsModalOpen] = useState(false); //state modal create task
+    const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false); //state modal sukses
+    const [showErrorDialog, setShowErrorDialog] = useState(false); //state modal error
+    const [errorMessage, setErrorMessage] = useState(''); //state msg error untuk modal error
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false); //state modal edit
+    const [taskToEdit, setTaskToEdit] = useState<Task | null>(null); //penyimpanan data edit
+    const [showDeleteModal, setShowDeleteModal] = useState(false); //state modal delete
+    const [taskIdToDelete, setTaskIdToDelete] = useState<string | null>(null);//state id task untuk delete
 
     //pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    const token = localStorage.getItem("token");
-    const userRole = localStorage.getItem('role');
-    const isPM = userRole === 'pm';
+    const token = localStorage.getItem("token"); //pengambilan token dari localStorage
+    const userRole = localStorage.getItem('role'); //pengambilan role dari localStorage
+    const isPM = userRole === 'pm'; //set untuk role pm
 
     useEffect(() => {
-        fetchTasks();
+        fetchTasks();//ambil data saat mount dan saat currentPage berubah
     }, [token, currentPage]);
 
+    //fetch list task dengan pagination
     const fetchTasks = async () => {
         try {
             const response = await fetch(`http://localhost:5000/api/task/?page=${currentPage}`, {
@@ -54,19 +61,22 @@ const Task: React.FC = () => {
 
             const data = await response.json();
 
+            //parse data contributors apabila string jd array
             const parsedTasks = data.data.map((task: any) => ({
                 ...task,
                 contributors: JSON.parse(task.contributors),
             }));
-            setTasks(parsedTasks);
-            setTotalPages(data.totalPages);
+            setTasks(parsedTasks);//simpan list task
+            setTotalPages(data.totalPages); //simpan total pages
         } catch (error) {
             console.error("Error fetching:", error);
         }
     };
 
+    //handle search task 
     const handleSearch = async () => {
         try {
+            //fetch beradasarkan keyword yang diinput
             const response = await fetch(`http://localhost:5000/api/task/search?keyword=${searchKeyword}&page=${currentPage}`, {
                 method: "GET",
                 headers: {
@@ -75,73 +85,91 @@ const Task: React.FC = () => {
                 },
             });
 
+            //jika gagal
             if (!response.ok) {
+                //lempar error ke catch
                 throw new Error('Failed search');
             }
 
+            //parse data dari response menjadi object js
             const data = await response.json();
 
+            //mapping data task yg diterima. contributors parse dari string ke array
             const parsedTasks = data.data.map((task: any) => ({
                 ...task,
-                contributors: JSON.parse(task.contributors),
+                contributors: JSON.parse(task.contributors), //konversi dari string json ke object js
             }));
-            setTasks(parsedTasks);
-            setTotalPages(data.totalPages);
+            setTasks(parsedTasks);//simpan hasil tasks ke dalam state
+            setTotalPages(data.totalPages);//simpan total halaman untuk pagination
         } catch (error) {
             console.error("Error :", error);
+
         }
     };
 
+    //handle membuka modal create task
     const handleOpenModalCreate = () => {
-        setIsModalOpen(true);
+        setIsModalOpen(true);//simpan true agar modal terbuka
     };
 
+    //handle menutup modal create
     const handleCloseModalCreate = () => {
-        setIsModalOpen(false);
+        setIsModalOpen(false); //simpan false agar modal tertutup
     };
 
-    const handleSubmitTask = async (taskData: {
-        title: string;
-        description: string;
-        status: string;
-        contributors: string[];
-        startDate: string,
-        endDate: string,
-        dueDate: string;
-    }) => {
+    //handle submit task 
+    const handleSubmitTask = async (formData: FormData) => {
         try {
+            //mengirim req POST ke api/task dengan formData
             const response = await fetch('http://localhost:5000/api/task', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
                 },
-                body: JSON.stringify(taskData),
+                body: formData, //data dikirim dalam bentuk FormData
             });
 
+            //cek response jika gagal
             if (!response.ok) {
-                throw new Error('Failed');
+                //mengambil detail error dari response JSON
+                const errorData = await response.json();
+                //lempar error agar masuk ke catch
+                throw new Error(errorData.message || 'Gagal menyimpan task');
             }
 
-            setIsSuccessDialogOpen(true);
-            fetchTasks();
-        } catch (error) {
-            console.error('Error :', error);
+            //apabila berhasil
+            setIsSuccessDialogOpen(true);//modal sukses akan muncul
+            setShowErrorDialog(false);//sembunyikan dialog error
+            fetchTasks();//memanggil ulang list task terbaru
+        } catch (err) {
+            console.error('Error:', err);
+            //apabila error akan mengirim err msg untuk ditampilkan
+            if (err instanceof Error) {
+                setErrorMessage(err.message); // ini akan mengisi props Error Dialog
+            } else {
+                setErrorMessage('Terjadi kesalahan saat menyimpan task.'); // Pesan fallback jika error bukan objek Error
+            }
+
+            setShowErrorDialog(true); //menampilkan error dialog
         }
     };
 
+    //handle penutup dialog sukses
     const handleCloseSuccessDialog = () => {
         setIsSuccessDialogOpen(false);
         fetchTasks();
     };
 
+    //handle jika klik update
     const handleEditClick = (task: Task) => {
-        setTaskToEdit(task);
-        setIsEditModalOpen(true);
+        setTaskToEdit(task); //set data task
+        setIsEditModalOpen(true); //buka modal update
     };
 
+    //func delete task
     const deleteTask = async (taskId: string) => {
         try {
+            //fetch api delete dengan param taskId
             const response = await fetch(`http://localhost:5000/api/task/${taskId}`, {
                 method: 'DELETE',
                 headers: {
@@ -150,10 +178,13 @@ const Task: React.FC = () => {
                 },
             });
 
+            //jika gagal
             if (!response.ok) {
+                //maka akan muncul error
                 throw new Error('Failed to delete task');
             }
 
+            //jika berhasil akan render ulang atau refresh
             fetchTasks();
         } catch (error) {
             console.error('Error :', error);
@@ -216,6 +247,8 @@ const Task: React.FC = () => {
                                     <th scope="col" className="px-6 py-3">Description</th>
                                     <th scope="col" className="px-6 py-3">Status</th>
                                     <th scope="col" className="px-6 py-3">Contributors</th>
+                                    <th scope="col" className="px-4 py-3 text-center">Document</th>
+
                                 </tr>
                             </thead>
                             <tbody>
@@ -265,10 +298,10 @@ const Task: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span
                                                         className={`inline-flex w-3 h-3 rounded-full ${task.status === 'done'
-                                                                ? 'bg-green-600'
-                                                                : task.status === 'on progress'
-                                                                    ? 'bg-yellow-600'
-                                                                    : 'bg-gray-200'
+                                                            ? 'bg-green-600'
+                                                            : task.status === 'on progress'
+                                                                ? 'bg-yellow-600'
+                                                                : 'bg-gray-200'
                                                             }`}
                                                     ></span>
                                                     {task.status}
@@ -287,6 +320,23 @@ const Task: React.FC = () => {
                                                     ))}
                                                 </div>
                                             </td>
+
+                                            <td className="px-6 py-4 w-64">
+                                                <div className="flex flex-col items-center">
+                                                    {task.namaFile ? (
+                                                        <>
+                                                            <img src={iconPDF} alt="PDF Icon" className="w-6 h-6 mb-1" />
+                                                            <span className="text-base text-center break-all max-w-full">
+                                                                {task.namaFile}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-base text-white">-</span>
+                                                    )}
+                                                </div>
+                                            </td>
+
+
                                         </tr>
                                     ))
                                 ) : (
@@ -343,6 +393,15 @@ const Task: React.FC = () => {
                 onClose={handleCloseModalCreate}
                 onSubmit={handleSubmitTask}
             />
+
+
+            {showErrorDialog && (
+                <ErrorDialog
+                    message={errorMessage}
+                    onClose={() => setShowErrorDialog(false)}
+                />
+            )}
+
 
             {isSuccessDialogOpen && (
                 <SuccessDialog onClose={handleCloseSuccessDialog} />

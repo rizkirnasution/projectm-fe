@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 
+//component update modal dengan props
 const UpdateUserModal = ({ isOpen, onClose, onSubmit, user }) => {
+    //state untuk menyimpan fields dari form
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('');
     const [roles, setRoles] = useState([]);
 
+    //untuk mengisi form dg data user saat modal dibuka
     useEffect(() => {
         if (user) {
+            //jika user ada maka isi dg yg tersedia 
             setEmail(user.email || '');
             setUsername(user.username || '');
             setPassword('');
             setRole(user.roleId?.toString() || '');
         }
-    }, [user]);
+    }, [user]); //dirender apabila user berubah
 
+    //untuk mengambil data role untuk dimapping di dropwdown
     useEffect(() => {
         const fetchRoles = async () => {
             try {
@@ -27,7 +32,7 @@ const UpdateUserModal = ({ isOpen, onClose, onSubmit, user }) => {
                 });
                 const data = await response.json();
                 if (data.status === 200) {
-                    setRoles(data.data);
+                    setRoles(data.data);//set role jika berhasil
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -35,22 +40,23 @@ const UpdateUserModal = ({ isOpen, onClose, onSubmit, user }) => {
         };
 
         if (isOpen) {
-            fetchRoles();
+            fetchRoles();//jalankan hanya saat modal dibuka
         }
     }, [isOpen]);
 
+    //func untuk submit form update
     const handleSubmit = (e) => {
-        e.preventDefault();
+        e.preventDefault();//mencegah reload halaman saat submit
 
         const payload = {
-            id: user.id,
+            id: user.id, //id user yg akan diupdate
             email,
             username,
-            password: password || undefined,
-            roleId: Number(role),
+            password: password || undefined,//jika password tidak diisi tidak dikirim
+            roleId: Number(role),//convert to number
         };
 
-        onSubmit(payload);
+        onSubmit(payload);//panggil fungsi onSubmit dari parent
     };
 
     if (!isOpen || !user) return null;

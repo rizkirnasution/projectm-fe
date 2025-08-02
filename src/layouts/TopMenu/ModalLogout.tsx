@@ -9,6 +9,7 @@ import {
 } from '@headlessui/react'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 
+// definisikan tipe props untuk komponen LogoutConfirmDialog
 interface LogoutConfirmDialogProps {
     onConfirm: () => void
     onCancel: () => void
@@ -18,16 +19,19 @@ export default function LogoutConfirmDialog({
     onConfirm,
     onCancel,
 }: LogoutConfirmDialogProps) {
+    //state untuk kontrol buka atau tidak dialog
     const [open, setOpen] = useState(true)
 
+    //handle confirm ketika diklik
     const handleConfirm = () => {
-        setOpen(false)
-        onConfirm()
+        setOpen(false) //tutup dialog
+        onConfirm() //jalankan callback dari parent
     }
 
+    //handle cancel ketika diklik
     const handleCancel = () => {
-        setOpen(false)
-        onCancel()
+        setOpen(false) //tutup dialog
+        onCancel() //jalankan callback dari parent
     }
 
     return (

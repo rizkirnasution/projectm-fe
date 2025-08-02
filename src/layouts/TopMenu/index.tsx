@@ -3,24 +3,30 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import ModalLogoutConfirm from './ModalLogout'
 
 export default function TopMenu() {
+    //state dropdown
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    //state untuk menampilkan modal konfirmasi logout
     const [showLogoutModal, setShowLogoutModal] = useState(false)
+    //state untuk menyimpan data user
     const [user, setUser] = useState(null);
-    const location = useLocation();
+    const location = useLocation();//untuk mendapatkan route saat ini
 
     const navigate = useNavigate();
 
+    //ambil email user dari localStorage (digunakan jika perlu)
     const emailUser = localStorage.getItem('email');
 
 
     useEffect(() => {
         const fetchUser = async () => {
+            //ambil token
             const token = localStorage.getItem("token");
 
-            if (!token) return;
+            if (!token) return;//kalau token tidak ada hentikan
 
             try {
+                //fetch data all user
                 const response = await fetch("http://localhost:5000/api/user/", {
                     method: "GET",
                     headers: {
@@ -32,6 +38,7 @@ export default function TopMenu() {
                 const result = await response.json();
 
                 if (response.ok) {
+                    //simpan data user ke dalam state jika berhasil
                     setUser(result.data);
                 } else {
                     console.error("Failed :", result.message);
@@ -44,10 +51,12 @@ export default function TopMenu() {
         fetchUser();
     }, []);
 
-
+//handle logout
     const handleLogout = async () => {
+        //ambil token
         const token = localStorage.getItem("token");
         try {
+            //kirim req logout ke backend
             await fetch("http://localhost:5000/api/auth/v1/logout", {
                 method: "POST",
                 headers: {
@@ -59,12 +68,14 @@ export default function TopMenu() {
             console.error("Logout failed:", err);
         }
 
+        //remove semua data user dari localstorage
         localStorage.removeItem("token");
         localStorage.removeItem("username");
         localStorage.removeItem("email");
         localStorage.removeItem("role");
         localStorage.removeItem("roleId");
 
+        //arahkan user ke halaman login
         navigate("/login");
     };
 
